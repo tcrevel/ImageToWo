@@ -18,7 +18,7 @@ interface I18nContextType {
 
 const I18nContext = createContext<I18nContextType | null>(null);
 
-const STORAGE_KEY = "imagetofit-locale";
+const STORAGE_KEY = "imagetowo-locale";
 
 function detectBrowserLocale(): Locale {
   if (typeof window === "undefined") return "en";

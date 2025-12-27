@@ -4,7 +4,7 @@ import { I18nProvider } from "@/lib/i18n";
 import { SettingsProvider } from "@/lib/settings";
 
 export const metadata: Metadata = {
-  title: "ImageToFit - Workout Image to ZWO Converter",
+  title: "ImageToWo - Workout Image to ZWO Converter",
   description: "Transform cycling workout images into .zwo files for Zwift, Intervals.icu, and TrainingPeaks",
 };
 

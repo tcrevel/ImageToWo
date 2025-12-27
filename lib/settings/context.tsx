@@ -30,7 +30,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   ftp: 200,
 };
 
-const STORAGE_KEY = "imagetofit-settings";
+const STORAGE_KEY = "imagetowo-settings";
 
 // ============================================================================
 // Context

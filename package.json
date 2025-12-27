@@ -1,5 +1,5 @@
 {
-  "name": "imagetofit",
+  "name": "imagetowo",
   "version": "0.1.0",
   "description": "Transform cycling workout images into .zwo files for Zwift, Intervals.icu, and TrainingPeaks",
   "private": true,
@@ -12,7 +12,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tcrevel/imagetofit.git"
+    "url": "git+https://github.com/tcrevel/imagetowo.git"
   },
   "keywords": [
     "zwift",
@@ -24,9 +24,9 @@
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/tcrevel/imagetofit/issues"
+    "url": "https://github.com/tcrevel/imagetowo/issues"
   },
-  "homepage": "https://github.com/tcrevel/imagetofit#readme",
+  "homepage": "https://github.com/tcrevel/imagetowo#readme",
   "dependencies": {
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-slot": "^1.2.4",
