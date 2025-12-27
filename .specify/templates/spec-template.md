@@ -81,7 +81,7 @@
   ACTION REQUIRED: The content in this section represents placeholders.
   Fill them out with the right functional requirements.
   
-  CONSTITUTION COMPLIANCE (ImageToFit):
+  CONSTITUTION COMPLIANCE (ImageToWo):
   - FR for API: Must reference server-side only (Principle I)
   - FR for AI parsing: Must include warnings[] + confidence (Principle II)
   - FR for export: Must guarantee valid XML .zwo (Principle III)

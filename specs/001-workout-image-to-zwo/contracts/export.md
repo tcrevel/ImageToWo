@@ -78,7 +78,7 @@ Content-Disposition: attachment; filename="sweet-spot-45.zwo"
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <workout_file>
-  <author>ImageToFit</author>
+  <author>ImageToWo</author>
   <name>Sweet Spot 45</name>
   <description>45 minute sweet spot session</description>
   <sportType>bike</sportType>
@@ -176,7 +176,7 @@ Example: `"Sweet Spot 45!"` → `sweet-spot-45.zwo`
 3. Generate XML structure:
    - XML declaration
    - workout_file root
-   - author (hardcoded "ImageToFit")
+   - author (hardcoded "ImageToWo")
    - name (escaped)
    - description (escaped, if present)
    - sportType (hardcoded "bike")

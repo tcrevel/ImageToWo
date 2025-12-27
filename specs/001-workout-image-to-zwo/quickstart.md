@@ -1,4 +1,4 @@
-# Quickstart: ImageToFit Development
+# Quickstart: ImageToWo Development
 
 **Feature**: 001-workout-image-to-zwo  
 **Date**: 2025-12-26
@@ -14,8 +14,8 @@
 ### 1. Clone and Install
 
 ```bash
-git clone https://github.com/tcrevel/imagetofit.git
-cd imagetofit
+git clone https://github.com/tcrevel/imagetowo.git
+cd imagetowo
 git checkout 001-workout-image-to-zwo
 npm install
 ```

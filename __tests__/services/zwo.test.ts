@@ -23,7 +23,7 @@ describe("ZWO Generator", () => {
 
       expect(xml).toContain('<?xml version="1.0" encoding="UTF-8"?>');
       expect(xml).toContain("<workout_file>");
-      expect(xml).toContain("<author>ImageToFit</author>");
+      expect(xml).toContain("<author>ImageToWo</author>");
       expect(xml).toContain("<name>Warmup Only</name>");
       expect(xml).toContain("<sportType>bike</sportType>");
       expect(xml).toContain('<Warmup Duration="600" PowerLow="0.50" PowerHigh="0.75"/>');

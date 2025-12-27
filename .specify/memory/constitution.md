@@ -18,7 +18,7 @@ Templates requiring updates:
 Follow-up TODOs: None
 -->
 
-# ImageToFit Constitution
+# ImageToWo Constitution
 
 ## Vision
 

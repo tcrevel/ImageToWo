@@ -1,4 +1,4 @@
-# 🚴 ImageToFit
+# 🚴 ImageToWo
 
 > Transformez vos images de workout vélo en fichiers .zwo importables dans Zwift, Intervals.icu et TrainingPeaks.
 
@@ -27,8 +27,8 @@
 
 ```bash
 # Cloner le repository
-git clone https://github.com/tcrevel/imagetofit.git
-cd imagetofit
+git clone https://github.com/tcrevel/imagetowo.git
+cd imagetowo
 
 # Installer les dépendances
 npm install
@@ -87,7 +87,7 @@ ALLOWED_DEV_ORIGINS=127.0.0.1,localhost
 ## 🏗️ Architecture
 
 ```
-imagetofit/
+imagetowo/
 ├── app/
 │   ├── api/
 │   │   └── workouts/
@@ -151,7 +151,7 @@ npm start
 
 ## 📄 Format ZWO
 
-Le format `.zwo` est un fichier XML utilisé par Zwift pour décrire les workouts structurés. ImageToFit génère des fichiers ZWO compatibles avec :
+Le format `.zwo` est un fichier XML utilisé par Zwift pour décrire les workouts structurés. ImageToWo génère des fichiers ZWO compatibles avec :
 
 - Zwift
 - Intervals.icu

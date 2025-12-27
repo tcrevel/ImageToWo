@@ -158,7 +158,7 @@
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <workout_file>
-  <author>ImageToFit</author>
+  <author>ImageToWo</author>
   <name>Morning Intervals</name>
   <description>Parsed from image</description>
   <sportType>bike</sportType>

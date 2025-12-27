@@ -1,5 +1,5 @@
 /**
- * Translations for ImageToFit
+ * Translations for ImageToWo
  * 
  * Supports English (en) and French (fr)
  */
@@ -9,7 +9,7 @@ export type Locale = "en" | "fr";
 export const translations = {
   en: {
     // Header
-    appName: "ImageToFit",
+    appName: "ImageToWo",
     newUpload: "New Upload",
     
     // Hero
@@ -111,7 +111,7 @@ export const translations = {
     zwiftTip: "Restart Zwift if the workout doesn't appear immediately.",
     
     // Footer
-    footerTagline: "ImageToFit — Convert workout images to .zwo files",
+    footerTagline: "ImageToWo — Convert workout images to .zwo files",
     footerCompatible: "Compatible with Zwift, Intervals.icu, and TrainingPeaks",
     
     // Power zones
@@ -124,7 +124,7 @@ export const translations = {
   
   fr: {
     // Header
-    appName: "ImageToFit",
+    appName: "ImageToWo",
     newUpload: "Nouvel upload",
     
     // Hero
@@ -226,7 +226,7 @@ export const translations = {
     zwiftTip: "Redémarrez Zwift si le workout n'apparaît pas immédiatement.",
     
     // Footer
-    footerTagline: "ImageToFit — Convertissez vos images de workout en fichiers .zwo",
+    footerTagline: "ImageToWo — Convertissez vos images de workout en fichiers .zwo",
     footerCompatible: "Compatible avec Zwift, Intervals.icu et TrainingPeaks",
     
     // Power zones

@@ -17,7 +17,7 @@ import type { Workout, Step } from "@/lib/schemas";
 // Constants
 // ============================================================================
 
-const ZWO_AUTHOR = "ImageToFit";
+const ZWO_AUTHOR = "ImageToWo";
 const ZWO_SPORT_TYPE = "bike";
 
 // ============================================================================

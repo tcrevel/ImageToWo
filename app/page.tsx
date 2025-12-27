@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * ImageToFit Home Page
+ * ImageToWo Home Page
  * 
  * Main application flow:
  * 1. Upload workout image

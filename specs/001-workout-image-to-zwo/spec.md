@@ -3,7 +3,7 @@
 **Feature Branch**: `001-workout-image-to-zwo`  
 **Created**: 2025-12-26  
 **Status**: Draft  
-**Input**: ImageToFit MVP — Web app transforming cycling workout images into importable .zwo files
+**Input**: ImageToWo MVP — Web app transforming cycling workout images into importable .zwo files
 
 ## User Scenarios & Testing *(mandatory)*
 
