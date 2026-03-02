@@ -20,7 +20,8 @@ import { getServerSession } from "next-auth";
 import { parseWorkoutImage } from "@/lib/services/openai";
 import { hasActiveSubscription } from "@/lib/services/lemonsqueezy";
 import { 
-  generateUserId, 
+  generateUserId,
+  generateUserIdFromEmail,
   getClientIp, 
   getFingerprint, 
   checkRateLimitAsync, 
@@ -50,14 +51,18 @@ export async function POST(request: NextRequest) {
     const isSubscribed = userEmail
       ? await hasActiveSubscription(userEmail)
       : false;
+
+    // Derive a stable user ID for rate limiting:
+    // authenticated users are identified by email; anonymous calls fall back to IP + fingerprint.
+    const rateLimitUserId = env.RATE_LIMIT_ENABLED && !isSubscribed
+      ? (userEmail
+          ? generateUserIdFromEmail(userEmail)
+          : generateUserId(getClientIp(request), getFingerprint(request)))
+      : null;
     
     // Rate limiting check (skipped for active subscribers)
-    if (env.RATE_LIMIT_ENABLED && !isSubscribed) {
-      const ip = getClientIp(request);
-      const fingerprint = getFingerprint(request);
-      const userId = generateUserId(ip, fingerprint);
-      
-      const rateLimitCheck = await checkRateLimitAsync(userId);
+    if (rateLimitUserId) {
+      const rateLimitCheck = await checkRateLimitAsync(rateLimitUserId);
       
       if (!rateLimitCheck.allowed) {
         return NextResponse.json(
@@ -129,11 +134,8 @@ export async function POST(request: NextRequest) {
     
     // Consume rate limit after successful parsing (skipped for active subscribers)
     let rateLimitHeaders: Record<string, string> = {};
-    if (env.RATE_LIMIT_ENABLED && !isSubscribed) {
-      const ip = getClientIp(request);
-      const fingerprint = getFingerprint(request);
-      const userId = generateUserId(ip, fingerprint);
-      const consumed = await consumeRateLimitAsync(userId);
+    if (rateLimitUserId) {
+      const consumed = await consumeRateLimitAsync(rateLimitUserId);
       
       rateLimitHeaders = {
         "X-RateLimit-Limit": consumed.limit.toString(),
@@ -149,7 +151,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         ...result,
-        rateLimit: env.RATE_LIMIT_ENABLED ? {
+        rateLimit: rateLimitUserId ? {
           remaining: parseInt(rateLimitHeaders["X-RateLimit-Remaining"] || "0"),
           limit: parseInt(rateLimitHeaders["X-RateLimit-Limit"] || "5"),
           resetAt: rateLimitHeaders["X-RateLimit-Reset"],

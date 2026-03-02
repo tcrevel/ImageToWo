@@ -4,7 +4,8 @@
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { 
-  generateUserId, 
+  generateUserId,
+  generateUserIdFromEmail,
   checkRateLimit, 
   consumeRateLimit,
   checkRateLimitAsync,
@@ -50,6 +51,33 @@ describe("Rate Limit Service", () => {
       const id1 = generateUserId("192.168.1.1", "fp123");
       const id2 = generateUserId("192.168.1.1", "fp123");
       expect(id1).toBe(id2);
+    });
+  });
+
+  describe("generateUserIdFromEmail", () => {
+    it("generates consistent hash for the same email", () => {
+      const id1 = generateUserIdFromEmail("user@example.com");
+      const id2 = generateUserIdFromEmail("user@example.com");
+      expect(id1).toBe(id2);
+    });
+
+    it("is case-insensitive (normalises to lower-case)", () => {
+      const lower = generateUserIdFromEmail("user@example.com");
+      const upper = generateUserIdFromEmail("User@Example.COM");
+      expect(lower).toBe(upper);
+    });
+
+    it("generates different hash for different emails", () => {
+      const id1 = generateUserIdFromEmail("alice@example.com");
+      const id2 = generateUserIdFromEmail("bob@example.com");
+      expect(id1).not.toBe(id2);
+    });
+
+    it("does not collide with an IP-based ID for the same raw string", () => {
+      // The "email:" prefix must prevent collisions with IP-based keys.
+      const emailId = generateUserIdFromEmail("1.2.3.4");
+      const ipId = generateUserId("1.2.3.4");
+      expect(emailId).not.toBe(ipId);
     });
   });
 
@@ -189,6 +217,18 @@ describe("Rate Limit Service", () => {
       // Check after consumption
       const check2 = await checkRateLimitAsync(userId);
       expect(check2.remaining).toBe(3);
+    });
+
+    it("email-based quota is shared regardless of IP or fingerprint", async () => {
+      const userId = generateUserIdFromEmail(`shared-${Date.now()}@example.com`);
+
+      // Consume twice using the same email-based key
+      await consumeRateLimitAsync(userId);
+      await consumeRateLimitAsync(userId);
+
+      // A second "device" using the identical email-derived key sees 3 remaining
+      const check = await checkRateLimitAsync(userId);
+      expect(check.remaining).toBe(3);
     });
   });
 });

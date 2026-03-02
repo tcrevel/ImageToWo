@@ -81,6 +81,14 @@ export function generateUserId(ip: string, fingerprint?: string): string {
 }
 
 /**
+ * Generate a stable, privacy-preserving user ID from an authenticated user's email.
+ * The "email:" prefix prevents key collisions with IP-based identifiers.
+ */
+export function generateUserIdFromEmail(email: string): string {
+  return hashString(`email:${email.toLowerCase()}`);
+}
+
+/**
  * Simple string hash (not cryptographic, just for key generation)
  */
 function hashString(str: string): string {

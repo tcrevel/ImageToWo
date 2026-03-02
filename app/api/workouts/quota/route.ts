@@ -2,16 +2,20 @@
  * GET /api/workouts/quota
  * 
  * Check remaining quota for the current user without consuming it.
- * Returns rate limit information based on IP + fingerprint.
+ * When the user is authenticated, quota is tracked by their account email.
+ * Falls back to IP + fingerprint for unauthenticated requests.
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 import { 
-  generateUserId, 
+  generateUserId,
+  generateUserIdFromEmail,
   getClientIp, 
   getFingerprint, 
   checkRateLimitAsync 
 } from "@/lib/services/rate-limit";
+import { authOptions } from "@/lib/auth";
 import { getServerEnv } from "@/lib/utils/env";
 
 export async function GET(request: NextRequest) {
@@ -28,9 +32,13 @@ export async function GET(request: NextRequest) {
     });
   }
   
-  const ip = getClientIp(request);
-  const fingerprint = getFingerprint(request);
-  const userId = generateUserId(ip, fingerprint);
+  // Prefer the signed-in user's email as the rate-limit key
+  const session = await getServerSession(authOptions);
+  const userEmail = session?.user?.email ?? null;
+
+  const userId = userEmail
+    ? generateUserIdFromEmail(userEmail)
+    : generateUserId(getClientIp(request), getFingerprint(request));
   
   const result = await checkRateLimitAsync(userId);
   
