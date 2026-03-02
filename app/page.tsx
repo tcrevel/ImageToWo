@@ -17,6 +17,7 @@ import { WorkoutEditor } from "@/components/workout-editor";
 import { WorkoutMetrics } from "@/components/workout-metrics";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { QuotaBadge } from "@/components/quota-badge";
+import { SignInGate } from "@/components/auth/sign-in-gate";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
 import { useQuota } from "@/lib/hooks";
@@ -181,7 +182,9 @@ export default function Home() {
         {/* Main Content */}
         {state === "upload" && (
           <div className="space-y-6">
-            <Uploader onUpload={handleUpload} isLoading={false} />
+            <SignInGate>
+              <Uploader onUpload={handleUpload} isLoading={false} />
+            </SignInGate>
             
             {error && (
               <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-destructive text-sm">

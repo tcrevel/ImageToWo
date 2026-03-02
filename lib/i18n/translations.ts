@@ -126,6 +126,13 @@ export const translations = {
     quotaExhausted: "Daily limit reached",
     quotaResetIn: "Resets in",
     quotaUnlimited: "Unlimited",
+    
+    // Authentication
+    signInRequired: "Sign in to upload your workout image",
+    signInRequiredDesc: "Authentication is required to use the AI-powered workout converter.",
+    signInWithGoogle: "Sign in with Google",
+    signedInAs: "Signed in as",
+    signOut: "Sign out",
   },
   
   fr: {
@@ -247,6 +254,13 @@ export const translations = {
     quotaExhausted: "Limite journalière atteinte",
     quotaResetIn: "Réinitialisation dans",
     quotaUnlimited: "Illimité",
+    
+    // Authentication
+    signInRequired: "Connectez-vous pour uploader votre image de workout",
+    signInRequiredDesc: "L'authentification est requise pour utiliser le convertisseur de workout IA.",
+    signInWithGoogle: "Se connecter avec Google",
+    signedInAs: "Connecté en tant que",
+    signOut: "Se déconnecter",
   },
 } as const;
 

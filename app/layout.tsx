@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { I18nProvider } from "@/lib/i18n";
 import { SettingsProvider } from "@/lib/settings";
+import { AuthProvider } from "@/components/auth/auth-provider";
 
 export const metadata: Metadata = {
   title: "ImageToWo - Workout Image to ZWO Converter",
@@ -18,7 +19,9 @@ export default function RootLayout({
       <body className="antialiased">
         <I18nProvider>
           <SettingsProvider>
-            {children}
+            <AuthProvider>
+              {children}
+            </AuthProvider>
           </SettingsProvider>
         </I18nProvider>
       </body>
