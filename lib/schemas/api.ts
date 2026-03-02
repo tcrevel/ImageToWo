@@ -36,6 +36,7 @@ export const ErrorCodeSchema = z.enum([
   "INVALID_IMAGE",
   "PARSE_FAILED",
   "RATE_LIMITED",
+  "ACCOUNT_SUSPENDED",
   "FILE_TOO_LARGE",
   "INVALID_FORMAT",
   "INTERNAL_ERROR",

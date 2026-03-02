@@ -11,8 +11,9 @@
  */
 
 import React, { useState, useCallback } from "react";
-import { Download, Loader2, ArrowRight, Upload, Sparkles, ChevronDown, ChevronUp, ExternalLink, LogIn } from "lucide-react";
+import { Download, Loader2, ArrowRight, Upload, Sparkles, ChevronDown, ChevronUp, ExternalLink, LogIn, ShieldAlert } from "lucide-react";
 import { useSession, signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Uploader } from "@/components/uploader";
 import { WorkoutEditor } from "@/components/workout-editor";
 import { WorkoutMetrics } from "@/components/workout-metrics";
@@ -43,6 +44,7 @@ export default function Home() {
   
   const { fingerprint, updateQuota, hasQuota } = useQuota();
   const { data: session, status: authStatus } = useSession();
+  const router = useRouter();
 
   // Handle image upload and parsing
   const handleUpload = useCallback(async (file: File) => {
@@ -148,6 +150,16 @@ export default function Home() {
           <h1 className="text-xl font-bold">{t("appName")}</h1>
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
+            {session?.user?.isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/admin")}
+              >
+                <ShieldAlert className="h-4 w-4 mr-2" />
+                Admin
+              </Button>
+            )}
             {state === "edit" && (
               <Button variant="outline" size="sm" onClick={handleReset}>
                 <Upload className="h-4 w-4 mr-2" />

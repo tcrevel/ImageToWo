@@ -30,6 +30,10 @@ export interface ParseOptions {
   locale?: string;
   /** Additional context to help parsing */
   notes?: string;
+  /** Override the system prompt (admin-configurable) */
+  systemPromptOverride?: string;
+  /** Override the base user prompt template (admin-configurable) */
+  userPromptTemplateOverride?: string;
 }
 
 interface OpenAIWorkoutResponse {
@@ -71,7 +75,7 @@ function getOpenAI(): OpenAI {
 // System Prompt
 // ============================================================================
 
-const SYSTEM_PROMPT = `You are a cycling workout analyzer. You analyze images of cycling workouts and extract structured data.
+export const DEFAULT_SYSTEM_PROMPT = `You are a cycling workout analyzer. You analyze images of cycling workouts and extract structured data.
 
 Your output MUST be valid JSON matching this exact schema:
 {
@@ -120,6 +124,9 @@ Example: "4' 60%, 3' 70%, 3' 80%" should become:
 ]
 NOT a single warmup step!`;
 
+export const DEFAULT_USER_PROMPT_TEMPLATE =
+  "Analyze this cycling workout image and extract the structured workout data.";
+
 // ============================================================================
 // Parse Function
 // ============================================================================
@@ -140,7 +147,7 @@ export async function parseWorkoutImage(
   const openai = getOpenAI();
 
   // Build user prompt with optional context
-  let userPrompt = "Analyze this cycling workout image and extract the structured workout data.";
+  let userPrompt = options.userPromptTemplateOverride ?? DEFAULT_USER_PROMPT_TEMPLATE;
   
   if (options.ftp) {
     userPrompt += ` The user's FTP is ${options.ftp} watts - convert any absolute watt values to percentages.`;
@@ -162,7 +169,7 @@ export async function parseWorkoutImage(
       messages: [
         {
           role: "system",
-          content: SYSTEM_PROMPT,
+          content: options.systemPromptOverride ?? DEFAULT_SYSTEM_PROMPT,
         },
         {
           role: "user",
