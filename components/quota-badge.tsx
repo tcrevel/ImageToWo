@@ -5,15 +5,29 @@
  * 
  * Displays remaining daily analyses quota.
  * Shows warning when quota is low or exhausted.
+ * Shows a "Premium" badge for active subscribers.
  */
 
 import { useQuota, formatResetTime } from "@/lib/hooks";
+import { useSubscription } from "@/lib/hooks/use-subscription";
 import { useI18n } from "@/lib/i18n";
-import { Zap, AlertTriangle, Clock } from "lucide-react";
+import { Zap, AlertTriangle, Clock, Crown, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export function QuotaBadge() {
   const { quota, loading } = useQuota();
+  const { isSubscribed, checkoutLoading, startCheckout } = useSubscription();
   const { t, locale } = useI18n();
+
+  // Show Premium badge for active subscribers
+  if (isSubscribed) {
+    return (
+      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+        <Crown className="w-3.5 h-3.5" />
+        <span>{t("premiumUnlimited")}</span>
+      </div>
+    );
+  }
 
   // Don't render anything while loading or if quota is disabled
   if (loading || !quota?.enabled) {
@@ -38,22 +52,44 @@ export function QuotaBadge() {
   };
 
   return (
-    <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${getColorClasses()}`}>
-      {getIcon()}
-      {isExhausted ? (
-        <span className="flex items-center gap-1.5">
-          {t("quotaExhausted")}
-          <Clock className="w-3 h-3" />
-          <span className="text-xs opacity-75">
-            {formatResetTime(resetAt, locale)}
+    <div className="flex flex-col items-center gap-2">
+      <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${getColorClasses()}`}>
+        {getIcon()}
+        {isExhausted ? (
+          <span className="flex items-center gap-1.5">
+            {t("quotaExhausted")}
+            <Clock className="w-3 h-3" />
+            <span className="text-xs opacity-75">
+              {formatResetTime(resetAt, locale)}
+            </span>
           </span>
-        </span>
-      ) : (
-        <span>
-          <span className="font-bold">{remaining}</span>
-          <span className="opacity-75">/{limit}</span>
-          <span className="ml-1 hidden sm:inline">{t("quotaRemaining")}</span>
-        </span>
+        ) : (
+          <span>
+            <span className="font-bold">{remaining}</span>
+            <span className="opacity-75">/{limit}</span>
+            <span className="ml-1 hidden sm:inline">{t("quotaRemaining")}</span>
+          </span>
+        )}
+      </div>
+      {isExhausted && (
+        <Button
+          size="sm"
+          onClick={startCheckout}
+          disabled={checkoutLoading}
+          className="gap-1.5"
+        >
+          {checkoutLoading ? (
+            <>
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              {t("upgradingButton")}
+            </>
+          ) : (
+            <>
+              <Crown className="h-3.5 w-3.5" />
+              {t("upgradeButton")}
+            </>
+          )}
+        </Button>
       )}
     </div>
   );
@@ -102,3 +138,4 @@ export function QuotaIndicator() {
     </div>
   );
 }
+

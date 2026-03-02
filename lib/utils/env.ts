@@ -28,6 +28,12 @@ const envSchema = z.object({
   
   // Redis (optional - falls back to in-memory if not provided)
   REDIS_URL: z.string().url().optional(),
+
+  // Lemon Squeezy (optional - required only when payments are enabled)
+  LEMONSQUEEZY_API_KEY: z.string().optional(),
+  LEMONSQUEEZY_STORE_ID: z.string().optional(),
+  LEMONSQUEEZY_VARIANT_ID: z.string().optional(),
+  LEMONSQUEEZY_WEBHOOK_SECRET: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

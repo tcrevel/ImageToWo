@@ -131,6 +131,14 @@ export const translations = {
     signInRequired: "Sign in to get started",
     signInRequiredDesc: "Sign in with your Google account to upload and analyse workout images.",
     signInWithGoogle: "Sign in with Google",
+
+    // Subscription
+    upgradeTitle: "Upgrade to Premium",
+    upgradeDesc: "Get unlimited daily analyses for only €5/month.",
+    upgradeButton: "Upgrade for €5/month",
+    upgradingButton: "Redirecting...",
+    premiumBadge: "Premium",
+    premiumUnlimited: "Unlimited analyses",
   },
   
   fr: {
@@ -257,6 +265,14 @@ export const translations = {
     signInRequired: "Connectez-vous pour commencer",
     signInRequiredDesc: "Connectez-vous avec votre compte Google pour charger et analyser des images de workout.",
     signInWithGoogle: "Se connecter avec Google",
+
+    // Subscription
+    upgradeTitle: "Passez à Premium",
+    upgradeDesc: "Obtenez des analyses illimitées pour seulement 5 €/mois.",
+    upgradeButton: "Passer à 5 €/mois",
+    upgradingButton: "Redirection...",
+    premiumBadge: "Premium",
+    premiumUnlimited: "Analyses illimitées",
   },
 } as const;
 

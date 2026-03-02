@@ -16,7 +16,9 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 import { parseWorkoutImage } from "@/lib/services/openai";
+import { hasActiveSubscription } from "@/lib/services/lemonsqueezy";
 import { 
   generateUserId, 
   getClientIp, 
@@ -24,6 +26,7 @@ import {
   checkRateLimitAsync, 
   consumeRateLimitAsync 
 } from "@/lib/services/rate-limit";
+import { authOptions } from "@/lib/auth";
 import { getServerEnv } from "@/lib/utils/env";
 import type { ParseError } from "@/lib/schemas";
 
@@ -41,8 +44,15 @@ export async function POST(request: NextRequest) {
   try {
     const env = getServerEnv();
     
-    // Rate limiting check
-    if (env.RATE_LIMIT_ENABLED) {
+    // Check whether the authenticated user has an active subscription
+    const session = await getServerSession(authOptions);
+    const userEmail = session?.user?.email ?? null;
+    const isSubscribed = userEmail
+      ? await hasActiveSubscription(userEmail)
+      : false;
+    
+    // Rate limiting check (skipped for active subscribers)
+    if (env.RATE_LIMIT_ENABLED && !isSubscribed) {
       const ip = getClientIp(request);
       const fingerprint = getFingerprint(request);
       const userId = generateUserId(ip, fingerprint);
@@ -117,9 +127,9 @@ export async function POST(request: NextRequest) {
       notes,
     });
     
-    // Consume rate limit after successful parsing
+    // Consume rate limit after successful parsing (skipped for active subscribers)
     let rateLimitHeaders: Record<string, string> = {};
-    if (env.RATE_LIMIT_ENABLED) {
+    if (env.RATE_LIMIT_ENABLED && !isSubscribed) {
       const ip = getClientIp(request);
       const fingerprint = getFingerprint(request);
       const userId = generateUserId(ip, fingerprint);
