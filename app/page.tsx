@@ -18,9 +18,10 @@ import { WorkoutMetrics } from "@/components/workout-metrics";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { QuotaBadge } from "@/components/quota-badge";
 import { SignInGate } from "@/components/auth/sign-in-gate";
+import { OnboardingModal } from "@/components/onboarding-modal";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
-import { useQuota } from "@/lib/hooks";
+import { useQuota, useOnboarding } from "@/lib/hooks";
 import type { Workout, ParseResponse } from "@/lib/schemas";
 
 // ============================================================================
@@ -42,6 +43,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   
   const { fingerprint, updateQuota, hasQuota } = useQuota();
+  const { isOpen: isOnboardingOpen, skipOnboarding, completeOnboarding } = useOnboarding();
 
   // Handle image upload and parsing
   const handleUpload = useCallback(async (file: File) => {
@@ -141,6 +143,10 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-background">
+      {/* Onboarding modal — shown only on first visit */}
+      {isOnboardingOpen && (
+        <OnboardingModal onSkip={skipOnboarding} onComplete={completeOnboarding} />
+      )}
       {/* Header */}
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">

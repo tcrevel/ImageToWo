@@ -133,6 +133,20 @@ export const translations = {
     signInWithGoogle: "Sign in with Google",
     signedInAs: "Signed in as",
     signOut: "Sign out",
+
+    // Onboarding
+    onboardingStep1Title: "Welcome to ImageToWo!",
+    onboardingStep1Desc: "Convert your cycling workout screenshots into structured .zwo files in seconds. Here's a quick guide to get you started.",
+    onboardingStep2Title: "Upload a Workout Image",
+    onboardingStep2Desc: "Drag & drop a screenshot or photo of your cycling workout. We support JPEG, PNG, and WebP images up to 10 MB.",
+    onboardingStep3Title: "AI Parses Your Workout",
+    onboardingStep3Desc: "Our AI reads the image and automatically extracts every interval, power target, and duration. You can then review and edit the result.",
+    onboardingStep4Title: "Export & Import",
+    onboardingStep4Desc: "Download your workout as a .zwo file and import it directly into Zwift, Intervals.icu, or TrainingPeaks.",
+    onboardingSkip: "Skip",
+    onboardingBack: "Back",
+    onboardingNext: "Next",
+    onboardingGetStarted: "Get Started",
   },
   
   fr: {
@@ -261,6 +275,20 @@ export const translations = {
     signInWithGoogle: "Se connecter avec Google",
     signedInAs: "Connecté en tant que",
     signOut: "Se déconnecter",
+
+    // Onboarding
+    onboardingStep1Title: "Bienvenue sur ImageToWo !",
+    onboardingStep1Desc: "Convertissez vos captures d'écran d'entraînement cycliste en fichiers .zwo structurés en quelques secondes. Voici un guide rapide pour démarrer.",
+    onboardingStep2Title: "Uploadez une image de workout",
+    onboardingStep2Desc: "Glissez-déposez une capture d'écran ou photo de votre entraînement vélo. Les formats JPEG, PNG et WebP jusqu'à 10 Mo sont acceptés.",
+    onboardingStep3Title: "L'IA analyse votre workout",
+    onboardingStep3Desc: "Notre IA lit l'image et extrait automatiquement chaque intervalle, puissance cible et durée. Vous pouvez ensuite vérifier et modifier le résultat.",
+    onboardingStep4Title: "Exportez et importez",
+    onboardingStep4Desc: "Téléchargez votre workout au format .zwo et importez-le directement dans Zwift, Intervals.icu ou TrainingPeaks.",
+    onboardingSkip: "Passer",
+    onboardingBack: "Retour",
+    onboardingNext: "Suivant",
+    onboardingGetStarted: "Commencer",
   },
 } as const;
 
