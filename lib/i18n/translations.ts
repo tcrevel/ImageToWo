@@ -126,6 +126,11 @@ export const translations = {
     quotaExhausted: "Daily limit reached",
     quotaResetIn: "Resets in",
     quotaUnlimited: "Unlimited",
+
+    // Auth gate
+    signInRequired: "Sign in to get started",
+    signInRequiredDesc: "Sign in with your Google account to upload and analyse workout images.",
+    signInWithGoogle: "Sign in with Google",
   },
   
   fr: {
@@ -247,6 +252,11 @@ export const translations = {
     quotaExhausted: "Limite journalière atteinte",
     quotaResetIn: "Réinitialisation dans",
     quotaUnlimited: "Illimité",
+
+    // Auth gate
+    signInRequired: "Connectez-vous pour commencer",
+    signInRequiredDesc: "Connectez-vous avec votre compte Google pour charger et analyser des images de workout.",
+    signInWithGoogle: "Se connecter avec Google",
   },
 } as const;
 

@@ -11,7 +11,8 @@
  */
 
 import React, { useState, useCallback } from "react";
-import { Download, Loader2, ArrowRight, Upload, Sparkles, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import { Download, Loader2, ArrowRight, Upload, Sparkles, ChevronDown, ChevronUp, ExternalLink, LogIn } from "lucide-react";
+import { useSession, signIn } from "next-auth/react";
 import { Uploader } from "@/components/uploader";
 import { WorkoutEditor } from "@/components/workout-editor";
 import { WorkoutMetrics } from "@/components/workout-metrics";
@@ -42,6 +43,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   
   const { fingerprint, updateQuota, hasQuota } = useQuota();
+  const { data: session, status: authStatus } = useSession();
 
   // Handle image upload and parsing
   const handleUpload = useCallback(async (file: File) => {
@@ -183,7 +185,40 @@ export default function Home() {
         {/* Main Content */}
         {state === "upload" && (
           <div className="space-y-6">
-            <Uploader onUpload={handleUpload} isLoading={false} />
+            {/* Auth gate: show sign-in prompt when not authenticated */}
+            {authStatus !== "authenticated" ? (
+              <div
+                className={[
+                  "relative border-2 border-dashed rounded-lg p-8",
+                  "flex flex-col items-center justify-center gap-4 min-h-[200px]",
+                  "border-muted-foreground/25 bg-muted/20",
+                ].join(" ")}
+              >
+                {authStatus === "loading" ? (
+                  <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
+                ) : (
+                  <>
+                    <LogIn className="h-12 w-12 text-muted-foreground" />
+                    <div className="text-center">
+                      <p className="text-sm font-medium">{t("signInRequired")}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {t("signInRequiredDesc")}
+                      </p>
+                    </div>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => signIn("google")}
+                    >
+                      <LogIn className="h-4 w-4 mr-2" />
+                      {t("signInWithGoogle")}
+                    </Button>
+                  </>
+                )}
+              </div>
+            ) : (
+              <Uploader onUpload={handleUpload} isLoading={false} />
+            )}
             
             {error && (
               <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-destructive text-sm">
