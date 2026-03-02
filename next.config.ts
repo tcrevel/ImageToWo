@@ -24,6 +24,16 @@ const nextConfig: NextConfig = {
   // Dev origins (only applies to `next dev`)
   allowedDevOrigins: getAllowedDevOrigins(),
   
+  // Allow Google user avatar images served from Google's CDN
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+      },
+    ],
+  },
+  
   // Production CORS headers
   async headers() {
     const prodOrigins = getAllowedProdOrigins();
