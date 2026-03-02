@@ -23,18 +23,15 @@ if (!googleClientId || !googleClientSecret) {
 
 /**
  * Returns the list of admin email addresses from ADMIN_USERS env variable.
- * Result is cached to avoid re-parsing on every JWT refresh.
+ * Reads the env variable on every call to avoid stale-cache issues when the
+ * variable is set or changed after the module is first loaded.
  */
-let cachedAdminEmails: string[] | null = null;
-
 export function getAdminEmails(): string[] {
-  if (cachedAdminEmails === null) {
-    cachedAdminEmails =
-      process.env.ADMIN_USERS?.split(",")
-        .map((e) => e.trim())
-        .filter(Boolean) ?? [];
-  }
-  return cachedAdminEmails;
+  return (
+    process.env.ADMIN_USERS?.split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean) ?? []
+  );
 }
 
 export const authOptions: NextAuthOptions = {
@@ -50,7 +47,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     jwt({ token }) {
       if (token.email) {
-        token.isAdmin = getAdminEmails().includes(token.email);
+        token.isAdmin = getAdminEmails().includes(token.email.toLowerCase());
       }
       return token;
     },
