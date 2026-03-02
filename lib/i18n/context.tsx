@@ -20,11 +20,13 @@ const I18nContext = createContext<I18nContextType | null>(null);
 
 const STORAGE_KEY = "imagetowo-locale";
 
+const VALID_LOCALES: Locale[] = ["en", "fr", "es", "de", "nl", "it"];
+
 function detectBrowserLocale(): Locale {
   if (typeof window === "undefined") return "en";
   
   const browserLang = navigator.language.split("-")[0];
-  return browserLang === "fr" ? "fr" : "en";
+  return (VALID_LOCALES.includes(browserLang as Locale) ? browserLang : "en") as Locale;
 }
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
@@ -34,7 +36,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   // Initialize locale from storage or browser preference
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as Locale | null;
-    if (stored && (stored === "en" || stored === "fr")) {
+    if (stored && VALID_LOCALES.includes(stored)) {
       setLocaleState(stored);
     } else {
       setLocaleState(detectBrowserLocale());
