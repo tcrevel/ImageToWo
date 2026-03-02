@@ -17,6 +17,7 @@ import { WorkoutEditor } from "@/components/workout-editor";
 import { WorkoutMetrics } from "@/components/workout-metrics";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { QuotaBadge } from "@/components/quota-badge";
+import { AuthButton } from "@/components/auth-button";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
 import { useQuota } from "@/lib/hooks";
@@ -145,6 +146,7 @@ export default function Home() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-xl font-bold">{t("appName")}</h1>
           <div className="flex items-center gap-3">
+            <AuthButton />
             <LanguageSwitcher />
             {state === "edit" && (
               <Button variant="outline" size="sm" onClick={handleReset}>
