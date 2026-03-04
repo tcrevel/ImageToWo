@@ -28,6 +28,7 @@
   },
   "homepage": "https://github.com/tcrevel/imagetowo#readme",
   "dependencies": {
+    "@lemonsqueezy/lemonsqueezy.js": "^4.0.0",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-slot": "^1.2.4",
     "@types/node": "^25.0.3",
