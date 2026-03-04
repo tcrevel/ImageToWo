@@ -10,6 +10,10 @@ import {
   blockUser,
   unblockUser,
   isUserBlocked,
+  getUserDailyLimits,
+  getUserDailyLimit,
+  setUserDailyLimit,
+  deleteUserDailyLimit,
 } from "@/lib/services/admin-settings";
 import {
   DEFAULT_SYSTEM_PROMPT,
@@ -101,6 +105,37 @@ describe("Admin Settings Service (in-memory fallback)", () => {
       const users = await getBlockedUsers();
       expect(users).toContain("user1@example.com");
       expect(users).toContain("user2@example.com");
+    });
+  });
+
+  describe("setUserDailyLimit / getUserDailyLimit / getUserDailyLimits / deleteUserDailyLimit", () => {
+    it("returns null for a user with no limit override", async () => {
+      expect(await getUserDailyLimit("nolimit@example.com")).toBeNull();
+    });
+
+    it("sets and retrieves a per-user limit", async () => {
+      await setUserDailyLimit("limited@example.com", 3);
+      expect(await getUserDailyLimit("limited@example.com")).toBe(3);
+    });
+
+    it("getUserDailyLimits returns all overrides", async () => {
+      await setUserDailyLimit("a@example.com", 7);
+      await setUserDailyLimit("b@example.com", 12);
+      const limits = await getUserDailyLimits();
+      expect(limits["a@example.com"]).toBe(7);
+      expect(limits["b@example.com"]).toBe(12);
+    });
+
+    it("deletes a per-user limit override", async () => {
+      await setUserDailyLimit("todelete@example.com", 5);
+      await deleteUserDailyLimit("todelete@example.com");
+      expect(await getUserDailyLimit("todelete@example.com")).toBeNull();
+    });
+
+    it("overwriting a limit updates the value", async () => {
+      await setUserDailyLimit("update@example.com", 4);
+      await setUserDailyLimit("update@example.com", 20);
+      expect(await getUserDailyLimit("update@example.com")).toBe(20);
     });
   });
 });

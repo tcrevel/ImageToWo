@@ -29,6 +29,7 @@ export interface AdminSettings {
 
 const SETTINGS_KEY = "admin:settings";
 const BLOCKED_USERS_KEY = "admin:blocked_users";
+const USER_LIMITS_KEY = "admin:user_limits";
 
 // ============================================================================
 // In-Memory Fallback
@@ -51,6 +52,7 @@ function getMemorySettings(): AdminSettings {
 }
 
 const memoryBlockedUsers = new Set<string>();
+const memoryUserLimits = new Map<string, number>();
 
 // ============================================================================
 // Settings Operations
@@ -191,4 +193,92 @@ export async function unblockUser(email: string): Promise<void> {
   }
 
   memoryBlockedUsers.delete(email);
+}
+
+// ============================================================================
+// Per-User Daily Limit Overrides
+// ============================================================================
+
+/**
+ * Get all per-user daily limit overrides (Redis or in-memory fallback)
+ */
+export async function getUserDailyLimits(): Promise<Record<string, number>> {
+  const redis = getRedisClient();
+
+  if (redis) {
+    try {
+      const raw = await redis.hgetall(USER_LIMITS_KEY);
+      if (raw) {
+        const result: Record<string, number> = {};
+        for (const [email, val] of Object.entries(raw)) {
+          const parsed = parseInt(val as string, 10);
+          if (!isNaN(parsed)) result[email] = parsed;
+        }
+        return result;
+      }
+      return {};
+    } catch (error) {
+      console.error("Redis getUserDailyLimits error:", error);
+    }
+  }
+
+  return Object.fromEntries(memoryUserLimits);
+}
+
+/**
+ * Get per-user daily limit override for a specific email, or null if none set
+ */
+export async function getUserDailyLimit(email: string): Promise<number | null> {
+  const redis = getRedisClient();
+
+  if (redis) {
+    try {
+      const val = await redis.hget(USER_LIMITS_KEY, email);
+      if (val !== null) {
+        const parsed = parseInt(val, 10);
+        return isNaN(parsed) ? null : parsed;
+      }
+      return null;
+    } catch (error) {
+      console.error("Redis getUserDailyLimit error:", error);
+    }
+  }
+
+  return memoryUserLimits.has(email) ? memoryUserLimits.get(email)! : null;
+}
+
+/**
+ * Set a per-user daily limit override
+ */
+export async function setUserDailyLimit(email: string, limit: number): Promise<void> {
+  const redis = getRedisClient();
+
+  if (redis) {
+    try {
+      await redis.hset(USER_LIMITS_KEY, email, limit.toString());
+      return;
+    } catch (error) {
+      console.error("Redis setUserDailyLimit error:", error);
+    }
+  }
+
+  memoryUserLimits.set(email, limit);
+}
+
+/**
+ * Delete a per-user daily limit override (revert to global limit)
+ */
+export async function deleteUserDailyLimit(email: string): Promise<void> {
+  const redis = getRedisClient();
+
+  if (redis) {
+    try {
+      await redis.hdel(USER_LIMITS_KEY, email);
+      return;
+    } catch (error) {
+      console.error("Redis deleteUserDailyLimit error:", error);
+    }
+  }
+
+  memoryUserLimits.delete(email);
 }

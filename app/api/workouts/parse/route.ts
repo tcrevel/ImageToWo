@@ -58,8 +58,9 @@ export async function POST(request: NextRequest) {
       const ip = getClientIp(request);
       const fingerprint = getFingerprint(request);
       const userId = generateUserId(ip, fingerprint);
+      const userEmail = session?.user?.email ?? undefined;
       
-      const rateLimitCheck = await checkRateLimitAsync(userId);
+      const rateLimitCheck = await checkRateLimitAsync(userId, userEmail);
       
       if (!rateLimitCheck.allowed) {
         return NextResponse.json(
@@ -140,7 +141,8 @@ export async function POST(request: NextRequest) {
       const ip = getClientIp(request);
       const fingerprint = getFingerprint(request);
       const userId = generateUserId(ip, fingerprint);
-      const consumed = await consumeRateLimitAsync(userId);
+      const userEmail = session?.user?.email ?? undefined;
+      const consumed = await consumeRateLimitAsync(userId, userEmail);
       
       rateLimitHeaders = {
         "X-RateLimit-Limit": consumed.limit.toString(),

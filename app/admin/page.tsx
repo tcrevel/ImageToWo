@@ -6,7 +6,7 @@
  * Accessible only to users listed in the ADMIN_USERS environment variable.
  * Provides:
  *  - Settings management (system prompt, user prompt template)
- *  - User management (block / unblock users by email)
+ *  - User management (block / unblock users by email, per-user daily limit overrides)
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -225,10 +225,16 @@ function SettingsSection() {
 
 function UsersSection() {
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
+  const [userLimits, setUserLimits] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [newEmail, setNewEmail] = useState("");
   const [blocking, setBlocking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Per-user limit form state
+  const [limitEmail, setLimitEmail] = useState("");
+  const [limitValue, setLimitValue] = useState("");
+  const [savingLimit, setSavingLimit] = useState(false);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -236,6 +242,7 @@ function UsersSection() {
       const res = await fetch("/api/admin/users");
       const data = await res.json();
       setBlockedUsers(data.blockedUsers ?? []);
+      setUserLimits(data.userLimits ?? {});
     } catch {
       setError("Failed to load users");
     } finally {
@@ -286,6 +293,53 @@ function UsersSection() {
         await loadUsers();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unblock failed");
+      }
+    },
+    [loadUsers]
+  );
+
+  const handleSetLimit = useCallback(async () => {
+    const email = limitEmail.trim().toLowerCase();
+    const val = parseInt(limitValue, 10);
+    if (!email || isNaN(val) || val < 1) return;
+    setSavingLimit(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, dailyLimit: val }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Failed to set limit");
+      }
+      setLimitEmail("");
+      setLimitValue("");
+      await loadUsers();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to set limit");
+    } finally {
+      setSavingLimit(false);
+    }
+  }, [limitEmail, limitValue, loadUsers]);
+
+  const handleRemoveLimit = useCallback(
+    async (email: string) => {
+      setError(null);
+      try {
+        const res = await fetch("/api/admin/users", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, dailyLimit: null }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error ?? "Failed to remove limit");
+        }
+        await loadUsers();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to remove limit");
       }
     },
     [loadUsers]
@@ -347,6 +401,69 @@ function UsersSection() {
               >
                 <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Per-user daily limit overrides */}
+      <h3 className="text-base font-semibold mt-8 mb-3">Per-User Daily Limit Overrides</h3>
+      <p className="text-xs text-muted-foreground mb-4">
+        Set a custom daily analysis limit for a specific user, overriding the global setting.
+      </p>
+
+      <div className="flex gap-2 mb-6">
+        <input
+          type="email"
+          placeholder="user@example.com"
+          value={limitEmail}
+          onChange={(e) => setLimitEmail(e.target.value)}
+          className="flex-1 rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+        <input
+          type="number"
+          min={1}
+          placeholder="Limit"
+          value={limitValue}
+          onChange={(e) => setLimitValue(e.target.value)}
+          className="w-24 rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+        <Button
+          onClick={handleSetLimit}
+          disabled={savingLimit || !limitEmail.trim() || !limitValue || parseInt(limitValue, 10) < 1}
+        >
+          {savingLimit ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <>
+              <Save className="h-4 w-4 mr-2" />
+              Set
+            </>
+          )}
+        </Button>
+      </div>
+
+      {!loading && Object.keys(userLimits).length === 0 ? (
+        <p className="text-sm text-muted-foreground">No per-user limit overrides set.</p>
+      ) : (
+        <ul className="divide-y border rounded-md overflow-hidden">
+          {Object.entries(userLimits).map(([email, limit]) => (
+            <li
+              key={email}
+              className="flex items-center justify-between px-4 py-3 text-sm bg-background"
+            >
+              <span className="font-mono">{email}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-muted-foreground">{limit} / day</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleRemoveLimit(email)}
+                  title="Remove limit override"
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
             </li>
           ))}
         </ul>

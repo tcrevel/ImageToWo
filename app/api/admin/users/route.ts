@@ -14,6 +14,9 @@ import {
   getBlockedUsers,
   blockUser,
   unblockUser,
+  getUserDailyLimits,
+  setUserDailyLimit,
+  deleteUserDailyLimit,
 } from "@/lib/services/admin-settings";
 
 // ============================================================================
@@ -36,8 +39,11 @@ export async function GET() {
   const denied = await requireAdmin();
   if (denied) return denied;
 
-  const blockedUsers = await getBlockedUsers();
-  return NextResponse.json({ blockedUsers });
+  const [blockedUsers, userLimits] = await Promise.all([
+    getBlockedUsers(),
+    getUserDailyLimits(),
+  ]);
+  return NextResponse.json({ blockedUsers, userLimits });
 }
 
 export async function POST(request: NextRequest) {
@@ -87,4 +93,50 @@ export async function DELETE(request: NextRequest) {
 
   await unblockUser(email);
   return NextResponse.json({ success: true, email });
+}
+
+export async function PATCH(request: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  if (
+    typeof body !== "object" ||
+    body === null ||
+    typeof (body as Record<string, unknown>).email !== "string"
+  ) {
+    return NextResponse.json(
+      { error: "Request body must include { email: string, dailyLimit: number | null }" },
+      { status: 400 }
+    );
+  }
+
+  const { email, dailyLimit } = body as { email: string; dailyLimit: unknown };
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) {
+    return NextResponse.json({ error: "Email must not be empty" }, { status: 400 });
+  }
+
+  if (dailyLimit === null || dailyLimit === undefined) {
+    // Remove override — revert to global limit
+    await deleteUserDailyLimit(normalizedEmail);
+    return NextResponse.json({ success: true, email: normalizedEmail, dailyLimit: null });
+  }
+
+  const limitVal = Number(dailyLimit);
+  if (!Number.isInteger(limitVal) || limitVal < 1) {
+    return NextResponse.json(
+      { error: "Field 'dailyLimit' must be a positive integer or null" },
+      { status: 400 }
+    );
+  }
+
+  await setUserDailyLimit(normalizedEmail, limitVal);
+  return NextResponse.json({ success: true, email: normalizedEmail, dailyLimit: limitVal });
 }

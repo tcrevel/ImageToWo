@@ -11,7 +11,7 @@
 
 import { getServerEnv } from "@/lib/utils/env";
 import { getRedisClient } from "./redis";
-import { getAdminSettings } from "./admin-settings";
+import { getAdminSettings, getUserDailyLimit } from "./admin-settings";
 
 // ============================================================================
 // Types
@@ -122,12 +122,14 @@ function getSecondsUntilDayEnd(): number {
 /**
  * Check rate limit using Redis
  */
-async function checkRateLimitRedis(userId: string): Promise<RateLimitResult | null> {
+async function checkRateLimitRedis(userId: string, userEmail?: string): Promise<RateLimitResult | null> {
   const redis = getRedisClient();
   if (!redis) return null;
   
   try {
-    const { dailyLimit: limit } = await getAdminSettings();
+    const { dailyLimit: globalLimit } = await getAdminSettings();
+    const userOverride = userEmail ? await getUserDailyLimit(userEmail) : null;
+    const limit = userOverride !== null ? userOverride : globalLimit;
     const key = `${RATE_LIMIT_PREFIX}${userId}`;
     
     const countStr = await redis.get(key);
@@ -157,12 +159,14 @@ async function checkRateLimitRedis(userId: string): Promise<RateLimitResult | nu
 /**
  * Consume rate limit using Redis
  */
-async function consumeRateLimitRedis(userId: string): Promise<RateLimitResult | null> {
+async function consumeRateLimitRedis(userId: string, userEmail?: string): Promise<RateLimitResult | null> {
   const redis = getRedisClient();
   if (!redis) return null;
   
   try {
-    const { dailyLimit: limit } = await getAdminSettings();
+    const { dailyLimit: globalLimit } = await getAdminSettings();
+    const userOverride = userEmail ? await getUserDailyLimit(userEmail) : null;
+    const limit = userOverride !== null ? userOverride : globalLimit;
     const key = `${RATE_LIMIT_PREFIX}${userId}`;
     const ttl = getSecondsUntilDayEnd();
     
@@ -270,11 +274,13 @@ function consumeRateLimitMemory(userId: string, limit: number): RateLimitResult 
  * Check rate limit for a user
  * Uses Redis if available, falls back to in-memory
  */
-export async function checkRateLimitAsync(userId: string): Promise<RateLimitResult> {
-  const redisResult = await checkRateLimitRedis(userId);
+export async function checkRateLimitAsync(userId: string, userEmail?: string): Promise<RateLimitResult> {
+  const redisResult = await checkRateLimitRedis(userId, userEmail);
   if (redisResult) return redisResult;
   
-  const { dailyLimit: limit } = await getAdminSettings();
+  const { dailyLimit: globalLimit } = await getAdminSettings();
+  const userOverride = userEmail ? await getUserDailyLimit(userEmail) : null;
+  const limit = userOverride !== null ? userOverride : globalLimit;
   return checkRateLimitMemory(userId, limit);
 }
 
@@ -282,11 +288,13 @@ export async function checkRateLimitAsync(userId: string): Promise<RateLimitResu
  * Consume one unit from the rate limit
  * Uses Redis if available, falls back to in-memory
  */
-export async function consumeRateLimitAsync(userId: string): Promise<RateLimitResult> {
-  const redisResult = await consumeRateLimitRedis(userId);
+export async function consumeRateLimitAsync(userId: string, userEmail?: string): Promise<RateLimitResult> {
+  const redisResult = await consumeRateLimitRedis(userId, userEmail);
   if (redisResult) return redisResult;
   
-  const { dailyLimit: limit } = await getAdminSettings();
+  const { dailyLimit: globalLimit } = await getAdminSettings();
+  const userOverride = userEmail ? await getUserDailyLimit(userEmail) : null;
+  const limit = userOverride !== null ? userOverride : globalLimit;
   return consumeRateLimitMemory(userId, limit);
 }
 

@@ -13,6 +13,8 @@ import {
   checkRateLimitAsync 
 } from "@/lib/services/rate-limit";
 import { getServerEnv } from "@/lib/utils/env";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   const env = getServerEnv();
@@ -28,11 +30,13 @@ export async function GET(request: NextRequest) {
     });
   }
   
+  const session = await getServerSession(authOptions);
   const ip = getClientIp(request);
   const fingerprint = getFingerprint(request);
   const userId = generateUserId(ip, fingerprint);
+  const userEmail = session?.user?.email ?? undefined;
   
-  const result = await checkRateLimitAsync(userId);
+  const result = await checkRateLimitAsync(userId, userEmail);
   
   return NextResponse.json(
     {
