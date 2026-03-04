@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 interface AdminSettings {
   systemPrompt: string;
   userPromptTemplate: string;
+  dailyLimit: number;
 }
 
 // ============================================================================
@@ -132,7 +133,28 @@ function SettingsSection() {
       {!loading && settings && (
         <div className="space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="systemPrompt">
+            <label className="text-sm font-medium" htmlFor="dailyLimit">
+              Daily Analysis Limit
+            </label>
+            <p className="text-xs text-muted-foreground">
+              Maximum number of image analyses allowed per user per day.
+            </p>
+            <input
+              id="dailyLimit"
+              type="number"
+              min={1}
+              className="w-32 rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              value={settings.dailyLimit}
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10);
+                if (!isNaN(val) && val >= 1) {
+                  setSettings((s) => s && { ...s, dailyLimit: val });
+                }
+              }}
+            />
+          </div>
+
+          <div className="space-y-2">
               System Prompt
             </label>
             <p className="text-xs text-muted-foreground">

@@ -11,6 +11,7 @@
 
 import { DEFAULT_SYSTEM_PROMPT, DEFAULT_USER_PROMPT_TEMPLATE } from "@/lib/services/openai";
 import { getRedisClient } from "@/lib/services/redis";
+import { getServerEnv } from "@/lib/utils/env";
 
 // ============================================================================
 // Types
@@ -19,6 +20,7 @@ import { getRedisClient } from "@/lib/services/redis";
 export interface AdminSettings {
   systemPrompt: string;
   userPromptTemplate: string;
+  dailyLimit: number;
 }
 
 // ============================================================================
@@ -32,10 +34,21 @@ const BLOCKED_USERS_KEY = "admin:blocked_users";
 // In-Memory Fallback
 // ============================================================================
 
+// In-memory settings (dailyLimit is lazily initialized from env on first read)
+let memorySettingsInitialized = false;
 const memorySettings: AdminSettings = {
   systemPrompt: DEFAULT_SYSTEM_PROMPT,
   userPromptTemplate: DEFAULT_USER_PROMPT_TEMPLATE,
+  dailyLimit: 5, // placeholder; replaced with env value on first read
 };
+
+function getMemorySettings(): AdminSettings {
+  if (!memorySettingsInitialized) {
+    memorySettings.dailyLimit = getServerEnv().DAILY_PARSE_LIMIT;
+    memorySettingsInitialized = true;
+  }
+  return memorySettings;
+}
 
 const memoryBlockedUsers = new Set<string>();
 
@@ -58,6 +71,7 @@ export async function getAdminSettings(): Promise<AdminSettings> {
           systemPrompt: parsed.systemPrompt ?? DEFAULT_SYSTEM_PROMPT,
           userPromptTemplate:
             parsed.userPromptTemplate ?? DEFAULT_USER_PROMPT_TEMPLATE,
+          dailyLimit: parsed.dailyLimit ?? getServerEnv().DAILY_PARSE_LIMIT,
         };
       }
     } catch (error) {
@@ -65,7 +79,7 @@ export async function getAdminSettings(): Promise<AdminSettings> {
     }
   }
 
-  return { ...memorySettings };
+  return { ...getMemorySettings() };
 }
 
 /**
@@ -89,14 +103,18 @@ export async function updateAdminSettings(
   }
 
   // In-memory fallback
+  const settings = getMemorySettings();
   if (updates.systemPrompt !== undefined) {
-    memorySettings.systemPrompt = updates.systemPrompt;
+    settings.systemPrompt = updates.systemPrompt;
   }
   if (updates.userPromptTemplate !== undefined) {
-    memorySettings.userPromptTemplate = updates.userPromptTemplate;
+    settings.userPromptTemplate = updates.userPromptTemplate;
+  }
+  if (updates.dailyLimit !== undefined) {
+    settings.dailyLimit = updates.dailyLimit;
   }
 
-  return { ...memorySettings };
+  return { ...settings };
 }
 
 // ============================================================================
