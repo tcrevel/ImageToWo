@@ -12,6 +12,7 @@ import { authOptions } from "@/lib/auth";
 import {
   getAdminSettings,
   updateAdminSettings,
+  type AdminSettings,
 } from "@/lib/services/admin-settings";
 
 // ============================================================================
@@ -54,18 +55,29 @@ export async function PATCH(request: NextRequest) {
   }
 
   const updates: Record<string, unknown> = body as Record<string, unknown>;
-  const allowed = ["systemPrompt", "userPromptTemplate"];
-  const patch: Record<string, string> = {};
+  const allowed = ["systemPrompt", "userPromptTemplate", "dailyParseLimit"];
+  const patch: Partial<AdminSettings> = {};
 
   for (const key of allowed) {
     if (key in updates) {
-      if (typeof updates[key] !== "string") {
-        return NextResponse.json(
-          { error: `Field '${key}' must be a string` },
-          { status: 400 }
-        );
+      if (key === "dailyParseLimit") {
+        const val = updates[key];
+        if (val !== null && (typeof val !== "number" || !Number.isInteger(val) || val < 0)) {
+          return NextResponse.json(
+            { error: `Field 'dailyParseLimit' must be a non-negative integer or null` },
+            { status: 400 }
+          );
+        }
+        (patch as Record<string, unknown>)[key] = val as number | null;
+      } else {
+        if (typeof updates[key] !== "string") {
+          return NextResponse.json(
+            { error: `Field '${key}' must be a string` },
+            { status: 400 }
+          );
+        }
+        (patch as Record<string, unknown>)[key] = updates[key] as string;
       }
-      patch[key] = updates[key] as string;
     }
   }
 

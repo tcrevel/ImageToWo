@@ -121,13 +121,13 @@ function getSecondsUntilDayEnd(): number {
 /**
  * Check rate limit using Redis
  */
-async function checkRateLimitRedis(userId: string): Promise<RateLimitResult | null> {
+async function checkRateLimitRedis(userId: string, limitOverride?: number): Promise<RateLimitResult | null> {
   const redis = getRedisClient();
   if (!redis) return null;
   
   try {
     const env = getServerEnv();
-    const limit = env.DAILY_PARSE_LIMIT;
+    const limit = limitOverride ?? env.DAILY_PARSE_LIMIT;
     const key = `${RATE_LIMIT_PREFIX}${userId}`;
     
     const countStr = await redis.get(key);
@@ -157,13 +157,13 @@ async function checkRateLimitRedis(userId: string): Promise<RateLimitResult | nu
 /**
  * Consume rate limit using Redis
  */
-async function consumeRateLimitRedis(userId: string): Promise<RateLimitResult | null> {
+async function consumeRateLimitRedis(userId: string, limitOverride?: number): Promise<RateLimitResult | null> {
   const redis = getRedisClient();
   if (!redis) return null;
   
   try {
     const env = getServerEnv();
-    const limit = env.DAILY_PARSE_LIMIT;
+    const limit = limitOverride ?? env.DAILY_PARSE_LIMIT;
     const key = `${RATE_LIMIT_PREFIX}${userId}`;
     const ttl = getSecondsUntilDayEnd();
     
@@ -203,9 +203,9 @@ async function consumeRateLimitRedis(userId: string): Promise<RateLimitResult | 
 /**
  * Check rate limit using in-memory storage
  */
-function checkRateLimitMemory(userId: string): RateLimitResult {
+function checkRateLimitMemory(userId: string, limitOverride?: number): RateLimitResult {
   const env = getServerEnv();
-  const limit = env.DAILY_PARSE_LIMIT;
+  const limit = limitOverride ?? env.DAILY_PARSE_LIMIT;
   const now = Date.now();
   const dayEnd = getDayEnd();
   
@@ -236,9 +236,9 @@ function checkRateLimitMemory(userId: string): RateLimitResult {
 /**
  * Consume rate limit using in-memory storage
  */
-function consumeRateLimitMemory(userId: string): RateLimitResult {
+function consumeRateLimitMemory(userId: string, limitOverride?: number): RateLimitResult {
   const env = getServerEnv();
-  const limit = env.DAILY_PARSE_LIMIT;
+  const limit = limitOverride ?? env.DAILY_PARSE_LIMIT;
   const now = Date.now();
   const dayEnd = getDayEnd();
   
@@ -275,22 +275,22 @@ function consumeRateLimitMemory(userId: string): RateLimitResult {
  * Check rate limit for a user
  * Uses Redis if available, falls back to in-memory
  */
-export async function checkRateLimitAsync(userId: string): Promise<RateLimitResult> {
-  const redisResult = await checkRateLimitRedis(userId);
+export async function checkRateLimitAsync(userId: string, limitOverride?: number): Promise<RateLimitResult> {
+  const redisResult = await checkRateLimitRedis(userId, limitOverride);
   if (redisResult) return redisResult;
   
-  return checkRateLimitMemory(userId);
+  return checkRateLimitMemory(userId, limitOverride);
 }
 
 /**
  * Consume one unit from the rate limit
  * Uses Redis if available, falls back to in-memory
  */
-export async function consumeRateLimitAsync(userId: string): Promise<RateLimitResult> {
-  const redisResult = await consumeRateLimitRedis(userId);
+export async function consumeRateLimitAsync(userId: string, limitOverride?: number): Promise<RateLimitResult> {
+  const redisResult = await consumeRateLimitRedis(userId, limitOverride);
   if (redisResult) return redisResult;
   
-  return consumeRateLimitMemory(userId);
+  return consumeRateLimitMemory(userId, limitOverride);
 }
 
 /**

@@ -4,7 +4,9 @@
  * Stores and retrieves admin-configurable settings:
  * - systemPrompt: The system prompt used with OpenAI GPT-4 Vision
  * - userPromptTemplate: The base user prompt template
+ * - dailyParseLimit: Global daily analysis limit per user (null = use env default)
  * - blockedUsers: Emails of users blocked from using the service
+ * - userLimits: Per-user daily analysis limit overrides (keyed by email)
  *
  * Uses Redis for persistence when available, falls back to in-memory storage.
  */
@@ -19,6 +21,7 @@ import { getRedisClient } from "@/lib/services/redis";
 export interface AdminSettings {
   systemPrompt: string;
   userPromptTemplate: string;
+  dailyParseLimit: number | null;
 }
 
 // ============================================================================
@@ -27,6 +30,7 @@ export interface AdminSettings {
 
 const SETTINGS_KEY = "admin:settings";
 const BLOCKED_USERS_KEY = "admin:blocked_users";
+const USER_LIMITS_KEY = "admin:user_limits";
 
 // ============================================================================
 // In-Memory Fallback
@@ -35,9 +39,11 @@ const BLOCKED_USERS_KEY = "admin:blocked_users";
 const memorySettings: AdminSettings = {
   systemPrompt: DEFAULT_SYSTEM_PROMPT,
   userPromptTemplate: DEFAULT_USER_PROMPT_TEMPLATE,
+  dailyParseLimit: null,
 };
 
 const memoryBlockedUsers = new Set<string>();
+const memoryUserLimits = new Map<string, number>();
 
 // ============================================================================
 // Settings Operations
@@ -58,6 +64,7 @@ export async function getAdminSettings(): Promise<AdminSettings> {
           systemPrompt: parsed.systemPrompt ?? DEFAULT_SYSTEM_PROMPT,
           userPromptTemplate:
             parsed.userPromptTemplate ?? DEFAULT_USER_PROMPT_TEMPLATE,
+          dailyParseLimit: parsed.dailyParseLimit ?? null,
         };
       }
     } catch (error) {
@@ -94,6 +101,9 @@ export async function updateAdminSettings(
   }
   if (updates.userPromptTemplate !== undefined) {
     memorySettings.userPromptTemplate = updates.userPromptTemplate;
+  }
+  if ("dailyParseLimit" in updates) {
+    memorySettings.dailyParseLimit = updates.dailyParseLimit ?? null;
   }
 
   return { ...memorySettings };
@@ -173,4 +183,84 @@ export async function unblockUser(email: string): Promise<void> {
   }
 
   memoryBlockedUsers.delete(email);
+}
+
+// ============================================================================
+// User Limit Operations
+// ============================================================================
+
+/**
+ * Get all per-user daily limit overrides (Redis or in-memory fallback)
+ */
+export async function getUserLimits(): Promise<Record<string, number>> {
+  const redis = getRedisClient();
+
+  if (redis) {
+    try {
+      const raw = await redis.get(USER_LIMITS_KEY);
+      if (raw) {
+        return JSON.parse(raw) as Record<string, number>;
+      }
+      return {};
+    } catch (error) {
+      console.error("Redis getUserLimits error:", error);
+    }
+  }
+
+  return Object.fromEntries(memoryUserLimits);
+}
+
+/**
+ * Get daily limit override for a specific user email (null if not set)
+ */
+export async function getUserLimit(email: string): Promise<number | null> {
+  const limits = await getUserLimits();
+  const key = email.trim().toLowerCase();
+  return key in limits ? limits[key] : null;
+}
+
+/**
+ * Set daily limit override for a specific user email
+ */
+export async function setUserLimit(email: string, limit: number): Promise<void> {
+  const key = email.trim().toLowerCase();
+  const redis = getRedisClient();
+
+  if (redis) {
+    try {
+      const raw = await redis.get(USER_LIMITS_KEY);
+      const limits: Record<string, number> = raw ? JSON.parse(raw) : {};
+      limits[key] = limit;
+      await redis.set(USER_LIMITS_KEY, JSON.stringify(limits));
+      return;
+    } catch (error) {
+      console.error("Redis setUserLimit error:", error);
+    }
+  }
+
+  memoryUserLimits.set(key, limit);
+}
+
+/**
+ * Remove daily limit override for a specific user email
+ */
+export async function removeUserLimit(email: string): Promise<void> {
+  const key = email.trim().toLowerCase();
+  const redis = getRedisClient();
+
+  if (redis) {
+    try {
+      const raw = await redis.get(USER_LIMITS_KEY);
+      if (raw) {
+        const limits: Record<string, number> = JSON.parse(raw);
+        delete limits[key];
+        await redis.set(USER_LIMITS_KEY, JSON.stringify(limits));
+      }
+      return;
+    } catch (error) {
+      console.error("Redis removeUserLimit error:", error);
+    }
+  }
+
+  memoryUserLimits.delete(key);
 }

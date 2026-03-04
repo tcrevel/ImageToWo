@@ -25,7 +25,11 @@ import {
   consumeRateLimitAsync 
 } from "@/lib/services/rate-limit";
 import { getServerEnv } from "@/lib/utils/env";
-import { getAdminSettings, isUserBlocked } from "@/lib/services/admin-settings";
+import {
+  getAdminSettings,
+  getUserLimit,
+  isUserBlocked,
+} from "@/lib/services/admin-settings";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import type { ParseError } from "@/lib/schemas";
@@ -52,14 +56,26 @@ export async function POST(request: NextRequest) {
         return errorResponse("Your account has been suspended.", "ACCOUNT_SUSPENDED", 403);
       }
     }
-    
+
+    // Load admin settings once (used for limit resolution and prompts)
+    const adminSettings = await getAdminSettings();
+
+    // Resolve rate-limit user ID and effective limit
+    const ip = getClientIp(request);
+    const fingerprint = getFingerprint(request);
+    const userId = session?.user?.email
+      ? generateUserId(session.user.email)
+      : generateUserId(ip, fingerprint);
+
+    const userLimitOverride = session?.user?.email
+      ? await getUserLimit(session.user.email)
+      : null;
+    const effectiveLimit =
+      userLimitOverride ?? adminSettings.dailyParseLimit ?? env.DAILY_PARSE_LIMIT;
+
     // Rate limiting check
     if (env.RATE_LIMIT_ENABLED) {
-      const ip = getClientIp(request);
-      const fingerprint = getFingerprint(request);
-      const userId = generateUserId(ip, fingerprint);
-      
-      const rateLimitCheck = await checkRateLimitAsync(userId);
+      const rateLimitCheck = await checkRateLimitAsync(userId, effectiveLimit);
       
       if (!rateLimitCheck.allowed) {
         return NextResponse.json(
@@ -121,9 +137,6 @@ export async function POST(request: NextRequest) {
     // Convert file to base64
     const arrayBuffer = await file.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString("base64");
-
-    // Load admin-configurable prompts
-    const adminSettings = await getAdminSettings();
     
     // Parse with OpenAI
     const result = await parseWorkoutImage(base64, file.type, {
@@ -137,10 +150,7 @@ export async function POST(request: NextRequest) {
     // Consume rate limit after successful parsing
     let rateLimitHeaders: Record<string, string> = {};
     if (env.RATE_LIMIT_ENABLED) {
-      const ip = getClientIp(request);
-      const fingerprint = getFingerprint(request);
-      const userId = generateUserId(ip, fingerprint);
-      const consumed = await consumeRateLimitAsync(userId);
+      const consumed = await consumeRateLimitAsync(userId, effectiveLimit);
       
       rateLimitHeaders = {
         "X-RateLimit-Limit": consumed.limit.toString(),

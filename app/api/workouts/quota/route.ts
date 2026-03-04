@@ -2,7 +2,7 @@
  * GET /api/workouts/quota
  * 
  * Check remaining quota for the current user without consuming it.
- * Returns rate limit information based on IP + fingerprint.
+ * Returns rate limit information based on IP + fingerprint (or email for authenticated users).
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -13,6 +13,9 @@ import {
   checkRateLimitAsync 
 } from "@/lib/services/rate-limit";
 import { getServerEnv } from "@/lib/utils/env";
+import { getAdminSettings, getUserLimit } from "@/lib/services/admin-settings";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   const env = getServerEnv();
@@ -27,12 +30,23 @@ export async function GET(request: NextRequest) {
       storage: null,
     });
   }
-  
+
+  const session = await getServerSession(authOptions);
   const ip = getClientIp(request);
   const fingerprint = getFingerprint(request);
-  const userId = generateUserId(ip, fingerprint);
+  const userId = session?.user?.email
+    ? generateUserId(session.user.email)
+    : generateUserId(ip, fingerprint);
+
+  // Resolve effective limit: user override → admin global → env default
+  const adminSettings = await getAdminSettings();
+  const userLimitOverride = session?.user?.email
+    ? await getUserLimit(session.user.email)
+    : null;
+  const effectiveLimit =
+    userLimitOverride ?? adminSettings.dailyParseLimit ?? env.DAILY_PARSE_LIMIT;
   
-  const result = await checkRateLimitAsync(userId);
+  const result = await checkRateLimitAsync(userId, effectiveLimit);
   
   return NextResponse.json(
     {

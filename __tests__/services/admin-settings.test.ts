@@ -10,6 +10,10 @@ import {
   blockUser,
   unblockUser,
   isUserBlocked,
+  getUserLimits,
+  getUserLimit,
+  setUserLimit,
+  removeUserLimit,
 } from "@/lib/services/admin-settings";
 import {
   DEFAULT_SYSTEM_PROMPT,
@@ -34,6 +38,7 @@ describe("Admin Settings Service (in-memory fallback)", () => {
       const settings = await getAdminSettings();
       expect(settings.systemPrompt).toBe(DEFAULT_SYSTEM_PROMPT);
       expect(settings.userPromptTemplate).toBe(DEFAULT_USER_PROMPT_TEMPLATE);
+      expect(settings.dailyParseLimit).toBeNull();
     });
   });
 
@@ -59,6 +64,17 @@ describe("Admin Settings Service (in-memory fallback)", () => {
       });
       expect(updated.systemPrompt).toBe("sys");
       expect(updated.userPromptTemplate).toBe("usr");
+    });
+
+    it("updates dailyParseLimit to a number", async () => {
+      const updated = await updateAdminSettings({ dailyParseLimit: 10 });
+      expect(updated.dailyParseLimit).toBe(10);
+    });
+
+    it("updates dailyParseLimit to null", async () => {
+      await updateAdminSettings({ dailyParseLimit: 10 });
+      const updated = await updateAdminSettings({ dailyParseLimit: null });
+      expect(updated.dailyParseLimit).toBeNull();
     });
   });
 
@@ -90,6 +106,42 @@ describe("Admin Settings Service (in-memory fallback)", () => {
       const users = await getBlockedUsers();
       expect(users).toContain("user1@example.com");
       expect(users).toContain("user2@example.com");
+    });
+  });
+
+  describe("setUserLimit / getUserLimit / getUserLimits / removeUserLimit", () => {
+    it("sets a limit for a user", async () => {
+      await setUserLimit("limited@example.com", 20);
+      expect(await getUserLimit("limited@example.com")).toBe(20);
+    });
+
+    it("returns null for user with no limit set", async () => {
+      expect(await getUserLimit("nolimit@example.com")).toBeNull();
+    });
+
+    it("getUserLimits returns all user limits", async () => {
+      await setUserLimit("a@example.com", 3);
+      await setUserLimit("b@example.com", 7);
+      const limits = await getUserLimits();
+      expect(limits["a@example.com"]).toBe(3);
+      expect(limits["b@example.com"]).toBe(7);
+    });
+
+    it("removes a user limit override", async () => {
+      await setUserLimit("toremove@example.com", 15);
+      await removeUserLimit("toremove@example.com");
+      expect(await getUserLimit("toremove@example.com")).toBeNull();
+    });
+
+    it("normalizes email to lowercase", async () => {
+      await setUserLimit("Upper@Example.com", 5);
+      expect(await getUserLimit("upper@example.com")).toBe(5);
+    });
+
+    it("overwrites an existing limit", async () => {
+      await setUserLimit("overwrite@example.com", 5);
+      await setUserLimit("overwrite@example.com", 99);
+      expect(await getUserLimit("overwrite@example.com")).toBe(99);
     });
   });
 });

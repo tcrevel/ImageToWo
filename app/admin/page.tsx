@@ -5,14 +5,15 @@
  *
  * Accessible only to users listed in the ADMIN_USERS environment variable.
  * Provides:
- *  - Settings management (system prompt, user prompt template)
+ *  - Settings management (system prompt, user prompt template, daily parse limit)
  *  - User management (block / unblock users by email)
+ *  - User limit overrides (per-user daily analysis limit)
  */
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Loader2, Save, UserX, Trash2, ShieldAlert } from "lucide-react";
+import { Loader2, Save, UserX, Trash2, ShieldAlert, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // ============================================================================
@@ -22,6 +23,12 @@ import { Button } from "@/components/ui/button";
 interface AdminSettings {
   systemPrompt: string;
   userPromptTemplate: string;
+  dailyParseLimit: number | null;
+}
+
+interface UserLimit {
+  email: string;
+  limit: number;
 }
 
 // ============================================================================
@@ -70,6 +77,7 @@ export default function AdminPage() {
       <div className="container mx-auto px-4 py-8 max-w-3xl space-y-10">
         <SettingsSection />
         <UsersSection />
+        <UserLimitsSection />
       </div>
     </main>
   );
@@ -131,6 +139,34 @@ function SettingsSection() {
 
       {!loading && settings && (
         <div className="space-y-6">
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="dailyParseLimit">
+              Daily Analysis Limit
+            </label>
+            <p className="text-xs text-muted-foreground">
+              Maximum number of workout analyses per user per day. Leave empty
+              to use the environment default (currently 5).
+            </p>
+            <input
+              id="dailyParseLimit"
+              type="number"
+              min={0}
+              placeholder="e.g. 5 (leave empty for env default)"
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              value={settings.dailyParseLimit ?? ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSettings(
+                  (s) =>
+                    s && {
+                      ...s,
+                      dailyParseLimit: val === "" ? null : parseInt(val, 10),
+                    }
+                );
+              }}
+            />
+          </div>
+
           <div className="space-y-2">
             <label className="text-sm font-medium" htmlFor="systemPrompt">
               System Prompt
@@ -324,6 +360,164 @@ function UsersSection() {
               >
                 <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+// ============================================================================
+// User Limits Section
+// ============================================================================
+
+function UserLimitsSection() {
+  const [userLimits, setUserLimits] = useState<UserLimit[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newEmail, setNewEmail] = useState("");
+  const [newLimit, setNewLimit] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadLimits = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/user-limits");
+      const data = await res.json();
+      const limits: UserLimit[] = Object.entries(
+        (data.userLimits ?? {}) as Record<string, number>
+      ).map(([email, limit]) => ({ email, limit }));
+      setUserLimits(limits);
+    } catch {
+      setError("Failed to load user limits");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadLimits();
+  }, [loadLimits]);
+
+  const handleSet = useCallback(async () => {
+    const email = newEmail.trim().toLowerCase();
+    const limit = parseInt(newLimit, 10);
+    if (!email || isNaN(limit) || limit < 0) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/user-limits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, limit }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Failed to set limit");
+      }
+      setNewEmail("");
+      setNewLimit("");
+      await loadLimits();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to set limit");
+    } finally {
+      setSaving(false);
+    }
+  }, [newEmail, newLimit, loadLimits]);
+
+  const handleRemove = useCallback(
+    async (email: string) => {
+      setError(null);
+      try {
+        const res = await fetch(
+          `/api/admin/user-limits?email=${encodeURIComponent(email)}`,
+          { method: "DELETE" }
+        );
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error ?? "Failed to remove limit");
+        }
+        await loadLimits();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to remove limit");
+      }
+    },
+    [loadLimits]
+  );
+
+  return (
+    <section>
+      <h2 className="text-lg font-semibold mb-1">Per-User Limit Overrides</h2>
+      <p className="text-sm text-muted-foreground mb-4">
+        Override the daily analysis limit for specific users. Overrides take
+        precedence over the global daily limit setting above.
+      </p>
+
+      {/* Set a user limit */}
+      <div className="flex gap-2 mb-6">
+        <input
+          type="email"
+          placeholder="user@example.com"
+          value={newEmail}
+          onChange={(e) => setNewEmail(e.target.value)}
+          className="flex-1 rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+        <input
+          type="number"
+          min={0}
+          placeholder="Limit"
+          value={newLimit}
+          onChange={(e) => setNewLimit(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSet()}
+          className="w-24 rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+        <Button
+          onClick={handleSet}
+          disabled={saving || !newEmail.trim() || newLimit === ""}
+        >
+          {saving ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <>
+              <SlidersHorizontal className="h-4 w-4 mr-2" />
+              Set
+            </>
+          )}
+        </Button>
+      </div>
+
+      {error && <p className="text-sm text-destructive mb-4">{error}</p>}
+
+      {/* User limits list */}
+      {loading ? (
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading…
+        </div>
+      ) : userLimits.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          No per-user overrides set. All users use the global limit.
+        </p>
+      ) : (
+        <ul className="divide-y border rounded-md overflow-hidden">
+          {userLimits.map(({ email, limit }) => (
+            <li
+              key={email}
+              className="flex items-center justify-between px-4 py-3 text-sm bg-background"
+            >
+              <span className="font-mono">{email}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-muted-foreground">{limit} / day</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleRemove(email)}
+                  title="Remove limit override"
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
             </li>
           ))}
         </ul>
