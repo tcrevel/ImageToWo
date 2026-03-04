@@ -155,6 +155,7 @@ function SettingsSection() {
           </div>
 
           <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="systemPrompt">
               System Prompt
             </label>
             <p className="text-xs text-muted-foreground">
