@@ -76,8 +76,8 @@ export async function POST(request: NextRequest) {
   }
 
   const email = parsed.email.trim().toLowerCase();
-  if (!email) {
-    return NextResponse.json({ error: "Email must not be empty" }, { status: 400 });
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
   }
 
   await setUserLimit(email, parsed.limit);
