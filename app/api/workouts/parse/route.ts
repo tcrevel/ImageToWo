@@ -25,6 +25,9 @@ import {
   consumeRateLimitAsync 
 } from "@/lib/services/rate-limit";
 import { getServerEnv } from "@/lib/utils/env";
+import { getAdminSettings, isUserBlocked } from "@/lib/services/admin-settings";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import type { ParseError } from "@/lib/schemas";
 
 // ============================================================================
@@ -40,6 +43,15 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 export async function POST(request: NextRequest) {
   try {
     const env = getServerEnv();
+
+    // Check if authenticated user is blocked
+    const session = await getServerSession(authOptions);
+    if (session?.user?.email) {
+      const blocked = await isUserBlocked(session.user.email);
+      if (blocked) {
+        return errorResponse("Your account has been suspended.", "ACCOUNT_SUSPENDED", 403);
+      }
+    }
     
     // Rate limiting check
     if (env.RATE_LIMIT_ENABLED) {
@@ -109,12 +121,17 @@ export async function POST(request: NextRequest) {
     // Convert file to base64
     const arrayBuffer = await file.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString("base64");
+
+    // Load admin-configurable prompts
+    const adminSettings = await getAdminSettings();
     
     // Parse with OpenAI
     const result = await parseWorkoutImage(base64, file.type, {
       ftp: ftp && !isNaN(ftp) ? ftp : undefined,
       locale,
       notes,
+      systemPromptOverride: adminSettings.systemPrompt,
+      userPromptTemplateOverride: adminSettings.userPromptTemplate,
     });
     
     // Consume rate limit after successful parsing
