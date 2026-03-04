@@ -21,6 +21,11 @@ vi.mock("@/lib/services/redis", () => ({
   getRedisClient: () => null,
 }));
 
+// Mock env to avoid requiring OPENAI_API_KEY in tests
+vi.mock("@/lib/utils/env", () => ({
+  getServerEnv: () => ({ DAILY_PARSE_LIMIT: 5 }),
+}));
+
 // ============================================================================
 // Tests
 // ============================================================================
@@ -34,6 +39,7 @@ describe("Admin Settings Service (in-memory fallback)", () => {
       const settings = await getAdminSettings();
       expect(settings.systemPrompt).toBe(DEFAULT_SYSTEM_PROMPT);
       expect(settings.userPromptTemplate).toBe(DEFAULT_USER_PROMPT_TEMPLATE);
+      expect(settings.dailyLimit).toBe(5);
     });
   });
 
@@ -59,6 +65,11 @@ describe("Admin Settings Service (in-memory fallback)", () => {
       });
       expect(updated.systemPrompt).toBe("sys");
       expect(updated.userPromptTemplate).toBe("usr");
+    });
+
+    it("updates dailyLimit", async () => {
+      const updated = await updateAdminSettings({ dailyLimit: 10 });
+      expect(updated.dailyLimit).toBe(10);
     });
   });
 

@@ -54,10 +54,10 @@ export async function PATCH(request: NextRequest) {
   }
 
   const updates: Record<string, unknown> = body as Record<string, unknown>;
-  const allowed = ["systemPrompt", "userPromptTemplate"];
-  const patch: Record<string, string> = {};
+  const allowedStrings = ["systemPrompt", "userPromptTemplate"];
+  const patch: Partial<{ systemPrompt: string; userPromptTemplate: string; dailyLimit: number }> = {};
 
-  for (const key of allowed) {
+  for (const key of allowedStrings) {
     if (key in updates) {
       if (typeof updates[key] !== "string") {
         return NextResponse.json(
@@ -65,8 +65,19 @@ export async function PATCH(request: NextRequest) {
           { status: 400 }
         );
       }
-      patch[key] = updates[key] as string;
+      (patch as Record<string, unknown>)[key] = updates[key];
     }
+  }
+
+  if ("dailyLimit" in updates) {
+    const val = Number(updates["dailyLimit"]);
+    if (!Number.isInteger(val) || val < 1) {
+      return NextResponse.json(
+        { error: "Field 'dailyLimit' must be a positive integer" },
+        { status: 400 }
+      );
+    }
+    patch.dailyLimit = val;
   }
 
   const updated = await updateAdminSettings(patch);
